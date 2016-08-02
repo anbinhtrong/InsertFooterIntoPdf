@@ -151,15 +151,22 @@ namespace InsertImageIntoPdf
             var baseFontTimesRoman = BaseFont.CreateFont(BaseFont.TIMES_ROMAN, BaseFont.CP1252, false);
             var normalFont = new Font(baseFontTimesRoman, 10, Font.NORMAL);
             var boldFont = new Font(baseFontTimesRoman, 10, Font.BOLD);
+
+            var exampleBound = new ImageFrameRectangle(251, 182);
             if (!string.IsNullOrEmpty(partner.PackcopyBlock1))
             {
                 var packCopyPack = Image.GetInstance(partner.PackcopyBlock1);
-                packCopyPack.ScaleAbsolute(377, 182);
-                var footerCell = new PdfPCell(packCopyPack, true)
+                //packCopyPack.ScaleAbsolute(251, 182);
+                var imageSize1 = new ImageFrameRectangle(packCopyPack.Width, packCopyPack.Height);
+                var newRec = ExpandToBound(imageSize1, exampleBound);//CalculateNewRectangle(packCopyPack);
+                //packCopyPack.ScaleAbsolute(newWith1, 182);
+                packCopyPack.ScaleAbsolute(newRec.Width, newRec.Height); 
+                var footerCell = new PdfPCell(packCopyPack)
                 {
                     PaddingRight = 10f,
                     BorderWidth = 0,
-                    VerticalAlignment = Element.ALIGN_MIDDLE
+                    VerticalAlignment = Element.ALIGN_MIDDLE,
+                    HorizontalAlignment = Element.ALIGN_CENTER
                 };
                 footerLabel.AddCell(footerCell);
             }
@@ -194,12 +201,18 @@ namespace InsertImageIntoPdf
             if (!string.IsNullOrEmpty(partner.PackcopyBlock2))
             {
                 var packCopyPack = Image.GetInstance(partner.PackcopyBlock2);
-                packCopyPack.ScaleAbsolute(377, 182);
-                var footerCell = new PdfPCell(packCopyPack, true)
+                //var newWith1 = packCopyPack.Width*182/packCopyPack.Height;
+                //var newRec = CalculateNewRectangle(packCopyPack);
+                //packCopyPack.ScaleAbsolute(newWith1, 182);
+                var imageSize1 = new ImageFrameRectangle(packCopyPack.Width, packCopyPack.Height);
+                var newRec = ExpandToBound(imageSize1, exampleBound);//CalculateNewRectangle(packCopyPack);
+                packCopyPack.ScaleAbsolute(newRec.Width, newRec.Height);                
+                var footerCell = new PdfPCell(packCopyPack)
                 {
                     PaddingLeft = 10f,
                     BorderWidth = 0,
-                    VerticalAlignment = Element.ALIGN_MIDDLE
+                    VerticalAlignment = Element.ALIGN_MIDDLE,
+                    HorizontalAlignment = Element.ALIGN_CENTER
                 };
                 footerLabel.AddCell(footerCell);
 
@@ -237,6 +250,38 @@ namespace InsertImageIntoPdf
 
             return footerLabel;
         }
+
+        //private static ImageFrameRectangle CalculateNewRectangle(Image image)
+        //{
+        //    var ratio = 251.0/182;
+        //    var result = new ImageFrameRectangle();
+        //    if (image.Width/image.Height > ratio)
+        //    {
+        //        result.Width = 251f;
+        //        result.Height = 182f*image.Width/251f;
+        //    }
+        //    else
+        //    {
+        //        result.Height = 182f;
+        //        result.Width = 251f * image.Height / 182;
+        //    }
+        //    return result;
+        //}
+
+        private static ImageFrameRectangle ExpandToBound(ImageFrameRectangle image, ImageFrameRectangle boundingBox)
+        {
+            double widthScale = 0, heightScale = 0;
+            if (image.Width != 0)
+                widthScale = (double)boundingBox.Width / (double)image.Width;
+            if (image.Height != 0)
+                heightScale = (double)boundingBox.Height / (double)image.Height;
+
+            double scale = Math.Min(widthScale, heightScale);
+
+            var result = new ImageFrameRectangle((int)(image.Width * scale),
+                                (int)(image.Height * scale));
+            return result;
+        }
     }
 
     class Partner
@@ -256,5 +301,17 @@ namespace InsertImageIntoPdf
         /// Display on right at TSC packing slip's footer instead
         /// </summary>
         public string PackcopyBlock2 { get; set; }
+    }
+
+    public class ImageFrameRectangle
+    {
+        public float Width { get; set; }
+        public float Height { get; set; }
+
+        public ImageFrameRectangle(float width, float height)
+        {
+            Width = width;
+            Height = height;
+        }
     }
 }
